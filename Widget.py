@@ -90,7 +90,7 @@ class VideoPlayer(QtWidgets.QWidget):
         self.frames.append(qimage2ndarray.rgb_view(image))
         self.most_recent_image = qimage2ndarray.rgb_view(image)
         self.frame_label.setPixmap(QtGui.QPixmap.fromImage(image))
-
+ #''
     def close_win(self):
         cv2.destroyAllWindows()
         print(self.most_recent_image)
