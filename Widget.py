@@ -12,7 +12,10 @@ class VideoPlayer(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self)
         self.video_size = QtCore.QSize(width, height)
         self.camera_capture = cv2.VideoCapture(cv2.CAP_DSHOW)
-        self.video_capture = cv2.VideoCapture()
+        self.eyes_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
+        #self.video_capture = cv2.VideoCapture()
+        self.frames = []
+
 
 
         self.frame_timer = QtCore.QTimer()
@@ -26,6 +29,7 @@ class VideoPlayer(QtWidgets.QWidget):
 
         self.main_layout = QtWidgets.QGridLayout()
         self.setup_ui()
+      #  self.image_read()
 
         QtCore.QObject.connect(self.play_pause_button, QtCore.SIGNAL('clicked()'), self.play_pause)
         #QtCore.QObject.connect(self.camera_video_button, QtCore.SIGNAL('clicked()'), self.camera_video_button)
@@ -50,7 +54,14 @@ class VideoPlayer(QtWidgets.QWidget):
             self.play_pause_button.setText("Pause")
         self.pause = not self.pause
 
+    '''def image_read(self,ret,frame):
+        while True:
+            ret, frame = self.camera_capture.read()
+            eyes =  self.eyes_cascade.detectMultiScale(frame,scaleFactor=1.5, minNeighbors=5, minSize=(20,10))
 
+            for (x,y,w,h) in self.eyes:
+                cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
+'''
 
 
     def setup_camera(self, fps):
@@ -64,19 +75,27 @@ class VideoPlayer(QtWidgets.QWidget):
         ret, frame = self.camera_capture.read()
 
         if not ret:
-            return False
+            raise ValueError('No camera captured')
 
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.flip(frame,1)
 
-        image = qimage2ndarray.array2qimage(frame)
 
+        eyes = self.eyes_cascade.detectMultiScale(frame, scaleFactor=1.5, minNeighbors=5, minSize=(20, 10))
+
+        for (x, y, w, h) in eyes:
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+        image = qimage2ndarray.array2qimage(frame)
+        self.frames.append(qimage2ndarray.rgb_view(image))
+        self.most_recent_image = qimage2ndarray.rgb_view(image)
         self.frame_label.setPixmap(QtGui.QPixmap.fromImage(image))
 
     def close_win(self):
         cv2.destroyAllWindows()
-        self.camera_capture.release()
-        self.video_capture.release()
+        print(self.most_recent_image)
+        #self.camera_capture.release()
+        #self.video_capture.release()
         self.close()
 
 if __name__ == "__main__":
